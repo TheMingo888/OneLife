@@ -84,7 +84,7 @@ fi
 
 if [ ! -e OneLife ]
 then
-	git clone https://github.com/TheMingo888/OneLife
+	git clone https://github.com/TheMingo888/YumLife
 fi
 
 

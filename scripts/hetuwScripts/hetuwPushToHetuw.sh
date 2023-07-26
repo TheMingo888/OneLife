@@ -5,7 +5,7 @@ cd OneLife
 echo 
 echo "PUSH OneLife"
 echo
-git push https://github.com/TheMingo888/OneLife
+git push https://github.com/TheMingo888/YumLife
 cd ..
 cd minorGems
 echo 
