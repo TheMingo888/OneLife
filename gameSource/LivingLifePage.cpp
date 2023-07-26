@@ -1108,6 +1108,12 @@ void LivingLifePage::sendToServerSocket( char *inMessage ) {
     timeLastMessageSent = game_getCurrentTime();
     
     printf( "Sending message to server: %s\n", inMessage );
+
+    if( mServerSocket == -1 ) {
+        printf( "Server socket already closed, skipping sending message: %s\n",
+                inMessage );
+        return;
+        }
     
     replaceLastMessageSent( stringDuplicate( inMessage ) );    
 
@@ -3283,6 +3289,7 @@ LivingLifePage::~LivingLifePage() {
     
     if( mServerSocket != -1 ) {
         closeSocket( mServerSocket );
+        mServerSocket = -1;
         }
     
     for( int j=0; j<2; j++ ) {
@@ -9265,12 +9272,16 @@ void LivingLifePage::draw( doublePair inViewCenter,
             pos = mult( pos, CELL_D );
             pos = sub( pos, lastScreenViewCenter );
             
-            int screenWidth, screenHeight;
-            getScreenDimensions( &screenWidth, &screenHeight );
+            // pos is currently in world/pixel coordinates           
             
-            pos.x += screenWidth / 2;
-            pos.y += screenHeight / 2;
-        
+            // do NOT adjust camera pos relative to screen corner yet
+            // we need to take screen scaling into acount
+            // and we don't want to recompute screen scaling here
+            // (we will do that in the photo code)
+            // pos.x += screenWidth / 2;
+            // pos.y += screenHeight / 2;
+
+
             char *ourName;
             
             if( ourLiveObject->name != NULL ) {
@@ -12134,6 +12145,40 @@ static double getLongestLine( char *inMessage ) {
 
 
 
+// tags with new or fresh if needed
+// inBaseString is destroyed internally if it needs to change
+//  and a new string is returned.
+// If it doesn't need to change, inBaseString is returned directly
+static char *tagObjectStringWithQualifier( char *inBaseString,
+                                           ObjectRecord *inO ) {
+    if( inO->useChance == 1.0 ) {
+        // an object that steps through uses
+        // probably something that gets visibly used up
+        // step by step.
+        // actorMinUseFraction == 1.0 means "full"
+        char *taggedString =
+            autoSprintf( "%s %s", inBaseString,
+                         translate( "fullHint" ) );
+        delete [] inBaseString;
+        return taggedString;
+        }
+    else if( inO->useChance < 1.0 &&
+             inO->useChance > 0 ) {
+        // an object that wears out somewhat randomly
+        // actorMinUseFraction == 1.0 means "unused new object"
+        char *taggedString =
+            autoSprintf( "%s %s", inBaseString,
+                         translate( "freshHint" ) );
+        delete [] inBaseString;
+        return taggedString;
+        }
+
+    return inBaseString;
+    }
+
+
+                                           
+
 char *LivingLifePage::getHintMessage( int inObjectID, int inIndex,
                                       int inDoNotPointAtThis ) {
 
@@ -12160,8 +12205,17 @@ char *LivingLifePage::getHintMessage( int inObjectID, int inIndex,
         char *actorString;
         
         if( actor > 0 ) {
-            actorString = stringToUpperCase( getObject( actor )->description );
+            ObjectRecord *actorO = getObject( actor );
+
+            actorString = stringToUpperCase( actorO->description );
             stripDescriptionComment( actorString );
+
+            if( found->actorMinUseFraction == 1.0 &&
+                actorO->numUses > 1 ) {
+                
+                actorString = tagObjectStringWithQualifier( actorString,
+                                                            actorO );
+                }
             }
         else if( actor == 0 || actor == -2 ) {
             // show bare hand for default actions too
@@ -12180,9 +12234,18 @@ char *LivingLifePage::getHintMessage( int inObjectID, int inIndex,
         char *targetString;
         
         if( target > 0 ) {
+            ObjectRecord *targetO = getObject( target );
+
             targetString = 
-                stringToUpperCase( getObject( target )->description );
+                stringToUpperCase( targetO->description );
             stripDescriptionComment( targetString );
+            
+            if( found->targetMinUseFraction == 1.0 &&
+                targetO->numUses > 1 ) {
+                
+                targetString = tagObjectStringWithQualifier( targetString,
+                                                             targetO );
+                }
             }
         else if( target == -1 && actor > 0 ) {
             ObjectRecord *actorObj = getObject( actor );
@@ -15945,8 +16008,10 @@ void LivingLifePage::step() {
                             // floor changed
                             
                             ObjectRecord *obj = getObject( floorID );
-                            if( obj->creationSound.numSubSounds > 0 ) {    
-                                    
+                            if( obj->creationSound.numSubSounds > 0 &&
+                                shouldCreationSoundPlay( oldFloor, 
+                                                         floorID ) ) {    
+                                
                                 playSound( obj->creationSound,
                                            getVectorFromCamera( x, y ) );
                                 }
@@ -25928,6 +25993,10 @@ void LivingLifePage::keyDown( unsigned char inASCII ) {
                             else if( commandTyped( typedText, 
                                                    "propertyCommand" ) ) {
                                 sendToServerSocket( (char*)"PROP 0 0#" );
+                                }
+                            else if( commandTyped( typedText, 
+                                                   "orderCommand" ) ) {
+                                sendToServerSocket( (char*)"ORDR 0 0#" );
                                 }
                             else {
                                 // filter hints
