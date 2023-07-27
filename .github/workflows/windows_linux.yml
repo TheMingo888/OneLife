@@ -41,10 +41,9 @@ jobs:
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ inputs.version }}
         with:
-          tag_name: $VERSION
-          release_name: $VERSION
+          tag_name: ${{ inputs.version }}
+          release_name: ${{ inputs.version }}
           body: |
             In order to install, you already need to have the normal version of the game.
             Then download the binary "OneLifeApp_H_windows" and place it inside your One Hour One Life folder.
