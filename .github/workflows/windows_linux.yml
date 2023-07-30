@@ -21,7 +21,6 @@ jobs:
       - name: scripts
         run: |
           cd scripts/hetuwScripts
-          #sudo apt-get install git g++ make imagemagick xclip libsdl1.2-dev libglu1-mesa-dev libgl1-mesa-dev 
           chmod +x hetuwPullLatest.sh 
           ./hetuwPullLatest.sh macos 2
           ./hetuwCompileAll.sh
