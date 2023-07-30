@@ -1,5 +1,8 @@
 #!/bin/sh
-
+echo boop
+pwd
+ls
+echo beep
 if [ ! -e bin ]
 then
 	mkdir bin
