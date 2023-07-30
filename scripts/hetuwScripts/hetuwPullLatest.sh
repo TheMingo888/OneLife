@@ -11,18 +11,16 @@ then
 	echo ""
 	echo "for example:"
 	echo "$0 linux 1"
+	echo "$0 macos 2"
 	echo "$0 windows 3"
 	exit 1
 fi
 
-if [ "$2" != "1" ]
+if [ "$2" != "1" ] || [ "$2" != "2" ] || [ "$2" != "3" ]
 then
-	if [ "$2" != "3" ]
-	then
-		echo "Invalid argument '$2'"
-		echo "To get more information type $0"
-		exit 1
-	fi
+	echo "Invalid argument '$2'"
+	echo "To get more information type $0"
+	exit 1
 fi
 
 if [ ! -e OneLifeData7 ]
@@ -182,6 +180,11 @@ echo "cd $1"
 if [ "$2" = "1" ] # linux
 then
 	echo "./runToBuild 1"
+fi
+
+if [ "$2" = "2" ] # macos
+then
+	echo "./runToBuild 2"
 fi
 
 if [ "$2" = "3" ] # windows

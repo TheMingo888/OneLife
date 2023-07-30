@@ -14,6 +14,15 @@ then
 	cd ..
 fi
 
+if [ -e macos ]
+then
+	echo "compiling for macos..."
+	cd macos
+	./runToBuild 2 || { echo "Error while compiling macos"; exit 1; }
+	cp OneLifeApp ../bin/OneLifeApp_H_macos
+	cd ..
+fi
+
 if [ -e windows ]
 then
 	echo "compiling for windows..."
