@@ -16,7 +16,7 @@ then
 	exit 1
 fi
 
-if [ "$2" != "1" ] || [ "$2" != "2" ] || [ "$2" != "3" ]
+if [ "$2" != "1" ] && [ "$2" != "2" ] && [ "$2" != "3" ]
 then
 	echo "Invalid argument '$2'"
 	echo "To get more information type $0"
