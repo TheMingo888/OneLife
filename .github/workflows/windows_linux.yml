@@ -23,6 +23,8 @@ jobs:
           cd scripts/hetuwScripts
           chmod +x hetuwPullLatest.sh hetuwCompileAll.sh
           ./hetuwPullLatest.sh macos 2
+          export CC="$(brew --prefix llvm@15)/bin/clang"
+          export CXX="$(brew --prefix llvm@15)/bin/clang++"
           ./hetuwCompileAll.sh
         env:
           ONELIFE_BRANCH: macos
