@@ -34,6 +34,11 @@ jobs:
           ONELIFE_REPO: ${{ vars.ONELIFE_REPO }}
           MINORGEMS_BRANCH: ${{ vars.MINORGEMS_BRANCH }}
           MINORGEMS_REPO: ${{ vars.MINORGEMS_REPO }}
+      - name: compile
+        run: |
+          pwd
+          ls
+          ./hetuwCompileAll.sh
       - name: test dir
         run: |
           cd scripts/hetuwScripts
