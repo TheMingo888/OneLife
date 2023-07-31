@@ -24,11 +24,6 @@ jobs:
           #sudo apt-get install git g++ make imagemagick xclip libsdl1.2-dev libglu1-mesa-dev libgl1-mesa-dev 
           chmod +x hetuwPullLatest.sh hetuwCompileAll.sh
           ./hetuwPullLatest.sh macos 2
-          echo woop
-          ./hetuwCompileAll.sh
-          echo weep
-          pwd
-          echo weep2
         env:
           ONELIFE_BRANCH: ${{ vars.ONELIFE_BRANCH }}
           ONELIFE_REPO: ${{ vars.ONELIFE_REPO }}
@@ -36,9 +31,9 @@ jobs:
           MINORGEMS_REPO: ${{ vars.MINORGEMS_REPO }}
       - name: compile
         run: |
+          cd scripts/hetuwScripts
           pwd
           ls
-          cd scripts/hetuwScripts
           ./hetuwCompileAll.sh
       - name: test dir
         run: |
