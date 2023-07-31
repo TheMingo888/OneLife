@@ -27,6 +27,8 @@ jobs:
           echo woop
           ./hetuwCompileAll.sh
           echo weep
+          pwd
+          echo weep2
         env:
           ONELIFE_BRANCH: ${{ vars.ONELIFE_BRANCH }}
           ONELIFE_REPO: ${{ vars.ONELIFE_REPO }}
@@ -36,11 +38,11 @@ jobs:
         run: |
           cd scripts/hetuwScripts
           ls
-          echo "_______w_________"
-          cd windows
+          echo "______macos______"
+          cd macos
           ls
           cd ..
-          echo "_________________"
+          echo "_______bin_______"
           cd bin
           ls
       - name: create release
