@@ -19,6 +19,8 @@ if [ -e macos ]
 then
 	echo "compiling for macos..."
 	cd macos
+	export CC="$(brew --prefix llvm@15)/bin/clang"
+	export CXX="$(brew --prefix llvm@15)/bin/clang++"
 	./runToBuild 2 || { echo "Error while compiling macos"; exit 1; }
 	cp OneLifeApp ../bin/OneLifeApp_H_macos
 	cd ..
