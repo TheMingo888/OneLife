@@ -1,9 +1,9 @@
 #!/bin/sh
 
-echo boop
+echo "boop"
 pwd
 ls
-echo beep
+echo "beep"
 
 if [ ! -e bin ]
 then
