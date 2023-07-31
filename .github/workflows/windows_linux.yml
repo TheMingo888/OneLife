@@ -38,6 +38,7 @@ jobs:
         run: |
           pwd
           ls
+          cd scripts/hetuwScripts
           ./hetuwCompileAll.sh
       - name: test dir
         run: |
