@@ -10,7 +10,7 @@ then
 	echo "compiling for linux..."
 	cd linux
 	./runToBuild 1 || { echo "Error while compiling linux"; exit 1; }
-	cp OneLifeApp ../bin/OneLifeApp_H_linux
+	cp EditOneLife ../bin/EditOneLife_linux
 	cd ..
 fi
 
@@ -19,7 +19,7 @@ then
 	echo "compiling for windows..."
 	cd windows
 	./runToBuild 5 || { echo "Error while compiling windows"; exit 1; }
-	cp OneLifeApp.exe ../bin/OneLifeApp_H_windows.exe
+	cp EditOneLife.exe ../bin/EditOneLife_windows.exe
 	cd ..
 fi
 

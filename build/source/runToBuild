@@ -26,6 +26,8 @@ cd gameSource
 
 echo "Building OneLife..."
 
+mv makeFileList makeFileList.old
+mv makeFileListEditor makeFileList
 make || exit 1
 
 
@@ -49,9 +51,9 @@ ls
 echo "Copying items from build into directories"
 if [ "$1" = "5" ] # windows
 then
-    cp OneLife/gameSource/OneLife.exe ./OneLifeApp.exe
+    cp OneLife/gameSource/EditOneLife.exe ./EditOneLife.exe
 else
-    cp OneLife/gameSource/OneLife ./OneLifeApp
+    cp OneLife/gameSource/EditOneLife ./EditOneLife
 fi
 cp OneLife/documentation/Readme.txt .
 cp OneLife/no_copyright.txt .
