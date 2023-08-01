@@ -24,7 +24,7 @@ chmod u+x ./configure
 cd gameSource
 
 
-echo "Building OneLife..."
+echo "Building EditOneLife..."
 
 mv makeFileList makeFileList.old
 mv makeFileListEditor makeFileList

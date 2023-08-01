@@ -42,7 +42,7 @@ if [ "$2" = "3" ]
 then
 	if [ ! -e SDL-1.2.15 ]
 	then
-		wget https://www.libsdl.org/release/SDL-devel-1.2.15-mingw32.tar.gz
+		wget -nv https://www.libsdl.org/release/SDL-devel-1.2.15-mingw32.tar.gz
 		tar -xvzf SDL-devel-1.2.15-mingw32.tar.gz
 		rm SDL-devel-1.2.15-mingw32.tar.gz
 	fi
@@ -83,12 +83,12 @@ MINORGEMS_REPO=${MINORGEMS_REPO:-https://github.com/hetuw/minorGems.git}
 
 if [ ! -e minorGems ]
 then
-	git clone -b $MINORGEMS_BRANCH $MINORGEMS_REPO minorGems
+	git clone -q -b $MINORGEMS_BRANCH $MINORGEMS_REPO minorGems
 fi
 
 if [ ! -e OneLife ]
 then
-	git clone -b $ONELIFE_BRANCH $ONELIFE_REPO OneLife
+	git clone -q -b $ONELIFE_BRANCH $ONELIFE_REPO OneLife
 fi
 
 
