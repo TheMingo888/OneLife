@@ -1,4 +1,4 @@
-int versionNumber = 372;
+int versionNumber = 383;
 int dataVersionNumber = 0;
 
 int binVersionNumber = versionNumber;
@@ -82,6 +82,7 @@ CustomRandomSource randSource( 34957197 );
 
 #include "emotion.h"
 #include "photos.h"
+#include "photoCache.h"
 #include "lifeTokens.h"
 #include "fitnessScore.h"
 
@@ -98,6 +99,7 @@ CustomRandomSource randSource( 34957197 );
 #include "TwinPage.h"
 #include "PollPage.h"
 #include "GeneticHistoryPage.h"
+#include "ServicesPage.h"
 //#include "TestPage.h"
 
 #include "ServerActionPage.h"
@@ -155,6 +157,7 @@ ReviewPage *reviewPage;
 TwinPage *twinPage;
 PollPage *pollPage;
 GeneticHistoryPage *geneticHistoryPage;
+ServicesPage *servicesPage;
 //TestPage *testPage = NULL;
 
 
@@ -664,6 +667,8 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     
     geneticHistoryPage = new GeneticHistoryPage();
     
+    servicesPage = new ServicesPage();
+    
 
     // 0 music headroom needed, because we fade sounds before playing music
     setVolumeScaling( 10, 0 );
@@ -752,7 +757,8 @@ void freeFrameDrawer() {
     delete twinPage;
     delete pollPage;
     delete geneticHistoryPage;
-    
+    delete servicesPage;
+
     //if( testPage != NULL ) {
     //    delete testPage;
     //    testPage = NULL;
@@ -776,6 +782,7 @@ void freeFrameDrawer() {
     freeMusicPlayer();
     freeEmotion();
     
+    freePhotoCache();
     freePhotos();
     freeLifeTokens();
     freeFitnessScore();
@@ -1687,6 +1694,7 @@ void drawFrame( char inUpdate ) {
 
                     initEmotion();
                     initPhotos();
+                    initPhotoCache();
                     
                     initLifeTokens();
                     initFitnessScore();
@@ -1717,7 +1725,7 @@ void drawFrame( char inUpdate ) {
                 loginEditOverride = true;
                 
                 existingAccountPage->setStatus( "editAccountWarning", false );
-                existingAccountPage->setStatusPositiion( true );
+                existingAccountPage->setStatusPosition( true );
                 
                 currentGamePage = existingAccountPage;
                 currentGamePage->base_makeActive( true );
@@ -1753,6 +1761,13 @@ void drawFrame( char inUpdate ) {
                 startConnecting();
                 }
             }
+        else if( currentGamePage == servicesPage ) {
+            if( servicesPage->checkSignal( "back" ) ) {
+                existingAccountPage->setStatus( NULL, false );
+                currentGamePage = existingAccountPage;
+                currentGamePage->base_makeActive( true );
+                }
+            }
         else if( currentGamePage == existingAccountPage ) {    
             if( existingAccountPage->checkSignal( "quit" ) ) {
                 quitGame();
@@ -1775,6 +1790,10 @@ void drawFrame( char inUpdate ) {
                 }
             else if( existingAccountPage->checkSignal( "friends" ) ) {
                 currentGamePage = twinPage;
+                currentGamePage->base_makeActive( true );
+                }
+            else if( existingAccountPage->checkSignal( "services" ) ) {
+                currentGamePage = servicesPage;
                 currentGamePage->base_makeActive( true );
                 }
             else if( existingAccountPage->checkSignal( "done" )
@@ -1869,7 +1888,7 @@ void drawFrame( char inUpdate ) {
                				existingAccountPage->setStatusDirect( message, true );
                 			delete [] message;
                 
-                			existingAccountPage->setStatusPositiion( true );
+                			existingAccountPage->setStatusPosition( true );
                 			currentGamePage->base_makeActive( true );
 						}
                         else if( SettingsManager::getIntSetting( 
@@ -1964,7 +1983,7 @@ void drawFrame( char inUpdate ) {
                 
                 existingAccountPage->setStatus( "loginFailed", true );
 
-                existingAccountPage->setStatusPositiion( true );
+                existingAccountPage->setStatusPosition( true );
 
                 currentGamePage->base_makeActive( true );
                 }
@@ -1979,7 +1998,7 @@ void drawFrame( char inUpdate ) {
                 
                 existingAccountPage->setStatus( "reconnectFailed", true );
 
-                existingAccountPage->setStatusPositiion( true );
+                existingAccountPage->setStatusPosition( true );
 
                 currentGamePage->base_makeActive( true );
                 }
@@ -1994,7 +2013,7 @@ void drawFrame( char inUpdate ) {
                 
                 existingAccountPage->setStatus( "noLifeTokens", true );
 
-                existingAccountPage->setStatusPositiion( true );
+                existingAccountPage->setStatusPosition( true );
 
                 currentGamePage->base_makeActive( true );
                 }
@@ -2009,7 +2028,7 @@ void drawFrame( char inUpdate ) {
                 
                 existingAccountPage->setStatus( "connectionFailed", true );
 
-                existingAccountPage->setStatusPositiion( true );
+                existingAccountPage->setStatusPosition( true );
 
                 currentGamePage->base_makeActive( true );
                 }
@@ -2036,7 +2055,7 @@ void drawFrame( char inUpdate ) {
                 
                 delete [] message;
                 
-                existingAccountPage->setStatusPositiion( true );
+                existingAccountPage->setStatusPosition( true );
 
                 currentGamePage->base_makeActive( true );
                 }
@@ -2069,7 +2088,7 @@ void drawFrame( char inUpdate ) {
                 
                 existingAccountPage->setStatus( "serverShutdown", true );
 
-                existingAccountPage->setStatusPositiion( true );
+                existingAccountPage->setStatusPosition( true );
 
                 currentGamePage->base_makeActive( true );
                 }
@@ -2084,7 +2103,7 @@ void drawFrame( char inUpdate ) {
                 
                 existingAccountPage->setStatus( "serverUpdate", true );
 
-                existingAccountPage->setStatusPositiion( true );
+                existingAccountPage->setStatusPosition( true );
 
                 currentGamePage->base_makeActive( true );
                 }
@@ -2099,7 +2118,7 @@ void drawFrame( char inUpdate ) {
                 
                 existingAccountPage->setStatus( "serverFull", true );
 
-                existingAccountPage->setStatusPositiion( true );
+                existingAccountPage->setStatusPosition( true );
 
                 currentGamePage->base_makeActive( true );
                 }
