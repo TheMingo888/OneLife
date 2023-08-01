@@ -126,7 +126,8 @@ void Phex::init() {
 	textInRecPaddingX = 0.01;
 	textInRecPaddingY = textInRecPaddingX * HetuwMod::viewWidthToHeightFactor;
 
-	setArray(recBckgrBig, (const double[]){ 0.7f, 0.0f, 1.0f, 1.0f }, 4);
+	//setArray(recBckgrBig, (const double[]){ 0.7f, 0.0f, 1.0f, 1.0f }, 4);
+	setArray(recBckgrBig, (const double[]){ 0.0f, 0.0f, 0.3f, 1.0f }, 4); //minitech
 	setArray(recBckgr, recBckgrBig, 4);
 
 	setArray(colorRecBckgr, (const float[]){ 0.0f, 0.0f, 0.0f, 0.7f }, 4);
@@ -240,7 +241,8 @@ void Phex::initButtons() {
 	double butPhexHeight = butPhexWidth * HetuwMod::viewWidthToHeightFactor;
 	double butPhexPaddingX = 0.01;
 	double butPhexPaddingY = butPhexPaddingX * HetuwMod::viewWidthToHeightFactor;
-	butPhex.setPosition(1.0-butPhexWidth-butPhexPaddingX, butPhexPaddingY);
+	//butPhex.setPosition(1.0-butPhexWidth-butPhexPaddingX, butPhexPaddingY);
+	butPhex.setPosition(butPhexPaddingX, butPhexPaddingY); //minitech
 	butPhex.setWidth(butPhexWidth);
 	butPhex.setHeight(butPhexHeight);
 	setArray(butPhex.colorBckgr, colorButPhexOffline, 4);
@@ -267,7 +269,8 @@ void Phex::initButtons() {
 
 	butMaximize.init("Maximize", &maximize);
 	setButtonStyle(&butMaximize);
-	butMaximize.setPosition(1.0-recBckgrWidth, 0);
+	// butMaximize.setPosition(1.0-recBckgrWidth, 0);
+	butMaximize.setPosition(0, 0); //minitech
 	butMaximize.setWidth(recBckgrWidth);
 	butMaximize.setHeight(butHeight);
 	setArray(butMaximize.colorBckgr, colorRecBckgr, 4);
@@ -967,6 +970,13 @@ void Phex::draw() {
 	if (!HetuwMod::phexIsEnabled) return;
 	if (HetuwMod::bDrawBiomeInfo) testDrawBiomeChunks();
 	fontSetMaxX();
+
+	//minitech
+	mainFont->hetuwMaxX = - HetuwMod::viewWidth/2.0 * 0.4;
+	mainFont->hetuwMaxX += lastScreenViewCenter.x;
+	mainFont->hetuwMaxX -= textInRecPaddingX*HetuwMod::viewWidth;
+	mainFont->hetuwMaxX = round(mainFont->hetuwMaxX);
+
 	tcp.step();
 	keyHandler.step();
 	if (sendBiomeDataActive && intervalSendBiomeData.step()) loopBiomeChunks();
@@ -974,6 +984,8 @@ void Phex::draw() {
 
 	if (isMinimized) drawMinimized();
 	else drawNormal();
+
+	fontSetMaxX(); //minitech
 }
 
 void Phex::drawNormal() {
