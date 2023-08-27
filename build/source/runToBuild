@@ -57,7 +57,9 @@ cp OneLife/documentation/Readme.txt .
 cp OneLife/no_copyright.txt .
 cp OneLife/gameSource/graphics/* ./graphics
 cp OneLife/gameSource/otherSounds/* ./otherSounds
-cp -u OneLife/gameSource/settings/* ./settings
+# YumLife: this is cp -u in vanilla/hetuw, but macOS cp does not support this.
+# We don't need this "only replace if newer" functionality anyway.
+cp OneLife/gameSource/settings/* ./settings
 cp OneLife/gameSource/languages/* ./languages
 cp OneLife/gameSource/language.txt ./
 cp OneLife/gameSource/us_english_60.txt ./
