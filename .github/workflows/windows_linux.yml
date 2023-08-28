@@ -57,21 +57,12 @@ jobs:
 
             If you run into problems, please search in your ohol folder for cache.fcz and delete all that contain that name.
             Then log in once with the normal client, before starting the mod.
-      - name: upload linux #LINUX
+      - name: upload macos #MACOS
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-          asset_path: ./scripts/hetuwScripts/bin/OneLifeApp_H_linux
-          asset_name: OneLifeApp_H_linux
-          asset_content_type: application/zip
-      - name: upload windows #WINDOWS
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-          asset_path: ./scripts/hetuwScripts/bin/OneLifeApp_H_windows.exe
-          asset_name: OneLifeApp_H_windows.exe
+          asset_path: ./scripts/hetuwScripts/bin/OneLifeApp_H_macos
+          asset_name: OneLifeApp_H_macos
           asset_content_type: application/zip
