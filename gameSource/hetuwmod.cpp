@@ -4372,10 +4372,10 @@ void HetuwMod::onCurseUpdate(LiveObject* o) {
 	}
 	string data = to_string(o->id);
 	if ( o->name ) {
-        data += " " + o->name;
+        data += " " + string(o->name);
 	}
 	if ( o->curseName ) {
-    	data += hetuwLogSeperator + o.curseName;
+    	data += hetuwLogSeperator + string(o->curseName);
 	}
 	HetuwMod::writeLineToLogs(type, data);
 }
