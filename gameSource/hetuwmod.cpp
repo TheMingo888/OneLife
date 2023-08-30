@@ -1299,7 +1299,7 @@ string HetuwMod::getTimeStamp(time_t t) {
 
 void HetuwMod::createNewLogFile() {
 	if (!bWriteLogs) return;
-	ofstream ofs( hetuwLogFileName, ofstream::out );
+	ofstream ofs( hetuwLogFileName, ofstream::app );
 	ofs.close();
 }
 
