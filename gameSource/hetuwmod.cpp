@@ -4365,6 +4365,21 @@ void HetuwMod::onNameUpdate(LiveObject* o) {
 	}
 }
 
+void HetuwMod::onCurseUpdate(LiveObject* o) {
+	string type = "forgive";
+	if ( o->curseLevel ) {
+		type = "curse";
+	}
+	string data = to_string(o->id);
+	if ( o->name ) {
+        data += " " + o->name;
+	}
+	if ( o->curseName ) {
+    	data += hetuwLogSeperator + o.curseName;
+	}
+	HetuwMod::writeLineToLogs(type, data);
+}
+
 void HetuwMod::drawDeathMessages() {
 	if ( deathMessages.size() <= 0 ) return;
 
