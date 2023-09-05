@@ -1,13 +1,15 @@
-int versionNumber = 383;
+int versionNumber = 387;
 int dataVersionNumber = 0;
 
 int binVersionNumber = versionNumber;
+
+const char *yumSubVersion = "c";
 
 // Note to modders:
 // Please use this tag to describe your client honestly and uniquely
 // client_official is reserved for the unmodded client
 // do not include whitespace in your tag
-const char *clientTag = "client_hetuw";
+const char *clientTag = "client_yumlife";
 
 
 
@@ -268,8 +270,14 @@ char isNonIntegerScalingAllowed() {
     }
 
 
+static char *windowTitle = NULL;
 const char *getWindowTitle() {
-    return "OneLife";
+	if (windowTitle == NULL) {
+		char title[256] = "";
+		snprintf(title, sizeof(title), "YumLife v%d%s", binVersionNumber, yumSubVersion);
+		windowTitle = strdup(title);
+	}
+    return windowTitle;
     }
 
 

@@ -971,6 +971,25 @@ typedef struct LiveObject {
 
         char newMove;
         
+        // Absolute position used when generating last PU sent out about this
+        // player.
+        // If they are making a very long chained move, and their status
+        // isn't changing, they might not generate a PU message for a very
+        // long time.  This becomes a problem when them move out/in range
+        // of another player.  If their status (held item, etc) has changed
+        // while they are out of range, the other player won't see that
+        // status change when they come back in range (because the PU
+        // happened when they were out of range) and the long chained move
+        // isn't generating any PU messages now that they are back in range.
+        // Since modded clients might make very long MOVEs for each part
+        // of a MOVE chain (since they are zoomed out), we can't just count
+        // MOVE messages sent since the las PU message went out.
+        // We use this position to determine how far they've moved away
+        // from their last PU position, and send an intermediary PU if
+        // they get too far away
+        GridPos lastPlayerUpdateAbsolutePos;
+        
+
         // heat map that player carries around with them
         // every time they stop moving, it is updated to compute
         // their local temp
@@ -2823,6 +2842,7 @@ typedef enum messageType {
     REMV,
     SREMV,
     DROP,
+    SWAP,
     KILL,
     SAY,
     EMOT,
@@ -3169,6 +3189,16 @@ ClientMessage parseMessage( LiveObject *inPlayer, char *inMessage ) {
                           nameBuffer, &( m.x ), &( m.y ), &( m.c ) );
         
         if( numRead != 4 ) {
+            m.type = UNKNOWN;
+            }
+        }
+    else if( strcmp( nameBuffer, "SWAP" ) == 0 ) {
+        m.type = SWAP;
+        numRead = sscanf( inMessage, 
+                          "%99s %d %d", 
+                          nameBuffer, &( m.x ), &( m.y ) );
+        
+        if( numRead != 3 ) {
             m.type = UNKNOWN;
             }
         }
@@ -3790,7 +3820,19 @@ double computeAge( LiveObject *inPlayer ) {
             lineageID = inPlayer->parentID;
             }
         
-        trackOffspring( inPlayer->email, lineageID );
+        if( inPlayer->lastSay == NULL ||
+            strstr( inPlayer->lastSay, "GOODBYE FOREVER" ) == NULL ) {
+            
+            // don't let them get reborn to their descendants if
+            // they say GOODBYE FOREVER as part of their final words
+            // For example, if they say
+            //    GOODBYE FOREVER MY DARLINGS
+            // That counts.
+            // Likewise:
+            //    I LOVE YOU ALL.  GOODBYE FOREVER
+
+            trackOffspring( inPlayer->email, lineageID );
+            }
         }
     return age;
     }
@@ -6452,7 +6494,16 @@ static void makePlayerSay( LiveObject *inPlayer, char *inToSay ) {
                 
                 if( distance( outPos, inPos ) <= maxDist ) {
                 
-                    newLocationSpeech.push_back( stringDuplicate( inToSay ) );
+                    char *newSpeech = stringDuplicate( inToSay );
+                    
+                    // trim off any metadata so it doesn't go through
+                    char *starLoc = strstr( newSpeech, " *" );
+                    
+                    if( starLoc != NULL ) {
+                        starLoc[0] = '\0';
+                        }
+
+                    newLocationSpeech.push_back( newSpeech );
                 
                     ChangePosition outChangePos = { outPos.x, outPos.y, false };
                     newLocationSpeechPos.push_back( outChangePos );
@@ -7585,6 +7636,9 @@ static UpdateRecord getUpdateRecord(
                                  inPlayer->posForced );
         r.absolutePosX = x;
         r.absolutePosY = y;
+
+        inPlayer->lastPlayerUpdateAbsolutePos.x = x;
+        inPlayer->lastPlayerUpdateAbsolutePos.y = y;
         }
     
     SimpleVector<char> clothingListBuffer;
@@ -8543,7 +8597,8 @@ int processLoggedInPlayer( int inAllowOrForceReconnect,
                            // set to -2 to force Eve
                            int inForceParentID = -1,
                            int inForceDisplayID = -1,
-                           GridPos *inForcePlayerPos = NULL ) {
+                           GridPos *inForcePlayerPos = NULL,
+                           char inSkipBirthLogging = false ) {
     
 
     usePersonalCurses = SettingsManager::getIntSetting( "usePersonalCurses",
@@ -10343,6 +10398,10 @@ int processLoggedInPlayer( int inAllowOrForceReconnect,
     newObject.deathLogged = false;
     newObject.newMove = false;
     
+    newObject.lastPlayerUpdateAbsolutePos.x = 0;
+    newObject.lastPlayerUpdateAbsolutePos.y = 0;
+    
+
     newObject.posForced = false;
     newObject.waitingForForceResponse = false;
     
@@ -10828,12 +10887,13 @@ int processLoggedInPlayer( int inAllowOrForceReconnect,
         }
     
 
-    if( ! newObject.isTutorial )        
+    if( ! newObject.isTutorial && ! inSkipBirthLogging )        
     logBirth( newObject.id,
               newObject.email,
               newObject.parentID,
               parentEmail,
               ! getFemale( &newObject ),
+              getObject( newObject.displayID )->race, 
               newObject.xd,
               newObject.yd,
               players.size(),
@@ -11084,13 +11144,19 @@ static void processWaitingTwinConnection( FreshConnection inConnection ) {
                                    nextConnection->email,
                                    // ignore tutorial number of all but
                                    // first player
+                                   // we don't want to spawn a new
+                                   // tutorial area for this other twin
                                    0,
                                    anyTwinCurseLevel,
                                    nextConnection->lifeStats,
                                    nextConnection->fitnessScore,
                                    parent,
                                    displayID,
-                                   forcedEvePos );
+                                   forcedEvePos,
+                                   // skip birth logging for other
+                                   // twins if lead twin is taking
+                                   // us to the tutorial
+                                   isTutorial );
             
             // just added is always last object in list
             
@@ -11337,6 +11403,21 @@ static char containmentPermitted( int inContainerID, int inContainedID ) {
     
     while( contLoc != NULL ) {
         
+        if( strstr( contLoc, "+containOffset" ) == contLoc ) {
+            // this is acutally a containment offset, not a +contFoodDish or 
+            // similiar.
+            
+            // skip it for consideration here
+            char *skipLoc = &( contLoc[5] );
+            
+            // search again after the skip
+            contLoc = strstr( skipLoc, "+cont" );
+
+            // re-enter while loop with the new location (which might be NULL)
+            continue;
+            }
+        
+
     
         char *limitNameLoc = &( contLoc[5] );
     
@@ -13427,6 +13508,19 @@ char *getUniqueCursableName( char *inPlayerName, char *outSuffixAdded,
                             }
                         }
                     
+                    if( ! dup ) {
+                        // not used by any living family
+                        // however, was this a recent EVE last name
+                        // that is still cursable?
+                        
+                        char *testName = autoSprintf( "EVE %s", tempLastName );
+                        
+                        dup = isNameDuplicateForCurses( testName );
+                        
+                        delete [] testName;
+                        }
+                    
+
                     if( dup ) {
                         i = nextI;
                         }
@@ -15917,6 +16011,67 @@ char isHungryWorkBlocked( LiveObject *inPlayer,
         }
 
     // not hungry work at all
+    return false;
+    }
+
+
+
+
+void sendNearPopSpeech( LiveObject *inPlayer ) {
+    // tell player about it with private speech
+    char *message = autoSprintf( 
+        "PS\n"
+        "%d/0 +TOO FAR FROM EVERYONE+\n#",
+        inPlayer->id );
+    
+    sendMessageToPlayer( 
+        inPlayer, 
+        message, 
+        strlen( message ) );
+    delete [] message;
+    }
+
+
+
+
+char isNearPopBlocked( LiveObject *inPlayer, 
+                       int inNewTarget ) {
+
+    ObjectRecord *o = getObject( inNewTarget );
+    
+    if( ! o->nearPop ) {
+        return false;
+        }
+    
+    GridPos pos = getPlayerPos( inPlayer );
+    int countNear = 0;
+    int totalCount = 0;
+    
+    for( int j=0; j<players.size(); j++ ) {
+        LiveObject *otherPlayer = players.getElement( j );
+        
+        if( ! otherPlayer->error &&
+            ! otherPlayer->isTutorial &&
+            otherPlayer->curseStatus.curseLevel == 0 ) {
+            
+            totalCount++;
+                        
+            double d = distance( pos, getPlayerPos( otherPlayer ) );
+
+            if( d <= o->nearPopDistance ) {
+                countNear++;
+                }
+            }
+        }
+
+    
+    float fractionNear = (float)countNear / (float)totalCount;
+    
+    if( fractionNear < o->nearPopFraction ) {
+        return true;
+        }
+    
+    // else enough of the population are close, not blocked
     return false;
     }
 
@@ -20877,6 +21032,19 @@ int main() {
                         nextPlayer->xd = m.extraPos[ m.numExtraPos - 1].x;
                         nextPlayer->yd = m.extraPos[ m.numExtraPos - 1].y;
                         
+
+                        if( distance( nextPlayer->lastPlayerUpdateAbsolutePos,
+                                      m.extraPos[ m.numExtraPos - 1] ) 
+                            > 
+                            getMaxChunkDimension() / 2 ) {
+                            // they have moved a long way since their
+                            // last PU was sent
+                            // Send one now, mid-move
+                            
+                            playerIndicesToSendUpdatesAbout.push_back( i );
+                            }
+                        
+
                         
                         if( nextPlayer->xd == nextPlayer->xs &&
                             nextPlayer->yd == nextPlayer->ys ) {
@@ -22861,9 +23029,22 @@ int main() {
                                             &hCost );
                                         }
                                     
+                                    // and if blocked by nearPop constraint
+                                    char nearPopBlocked = false;
+                                    
+                                    if( ! insertion &&
+                                        r->newTarget > 0 ) {
+                                        nearPopBlocked =
+                                            isNearPopBlocked( nextPlayer,
+                                                              r->newTarget );
+                                        }
+                                    
+                                    
+                                    
 
                                     if( ! insertion &&
                                         ! hungBlocked &&
+                                        ! nearPopBlocked &&
                                         ! transformation &&
                                         ! nonTransformTarget && 
                                         ! canPlayerUseOrLearnTool( 
@@ -23114,6 +23295,13 @@ int main() {
                                         r = NULL;
                                         
                                         sendHungryWorkSpeech( nextPlayer );
+                                        }
+                                    else if( isNearPopBlocked( 
+                                            nextPlayer,
+                                            r->newTarget ) ) {
+                                        r = NULL;
+                                        
+                                        sendNearPopSpeech( nextPlayer );
                                         }
                                     }
 
@@ -24867,7 +25055,8 @@ int main() {
                                 }
                             }
                         }                    
-                    else if( m.type == DROP ) {
+                    else if( m.type == DROP ||
+                             m.type == SWAP ) {
                         //Thread::staticSleep( 2000 );
                         
                         // send update even if action fails (to let them
@@ -25094,7 +25283,8 @@ int main() {
                                         
                                         char canGoIn = false;
                                         
-                                        if( canDrop &&
+                                        if( m.type != SWAP && 
+                                            canDrop &&
                                             droppedObj->containable &&
                                             targetSlotSize >=
                                             droppedObj->containSize &&
@@ -25103,7 +25293,10 @@ int main() {
                                                 droppedObj->id ) ) {
                                             canGoIn = true;
                                             }
-                                        
+                                        // if SWAP specified, never
+                                        // try to put item in.
+
+
                                         char forceUse = false;
                                         
                                         if( canDrop && 
@@ -25654,6 +25847,7 @@ int main() {
                     logDeath( nextPlayer->id,
                               nextPlayer->email,
                               nextPlayer->isEve,
+                              nextPlayer->name,
                               computeAge( nextPlayer ),
                               getSecondsPlayed( 
                                   nextPlayer ),
@@ -25685,6 +25879,11 @@ int main() {
                 
                 if( nextPlayer->curseStatus.curseLevel > 0 ) {
                     playerIndicesToSendCursesAbout.push_back( i );
+                    
+                    // tell the donkeytown player about their status
+                    
+                    sendGlobalMessage( (char*)"WELCOME TO DONKEYTOWN.",
+                                       nextPlayer );
                     }
                 
                 if( usePersonalCurses ) {
@@ -26031,6 +26230,7 @@ int main() {
                         logDeath( nextPlayer->id,
                                   nextPlayer->email,
                                   nextPlayer->isEve,
+                                  nextPlayer->name,
                                   age,
                                   getSecondsPlayed( nextPlayer ),
                                   male,
@@ -27130,6 +27330,7 @@ int main() {
                             logDeath( decrementedPlayer->id,
                                       decrementedPlayer->email,
                                       decrementedPlayer->isEve,
+                                      decrementedPlayer->name,
                                       computeAge( decrementedPlayer ),
                                       getSecondsPlayed( decrementedPlayer ),
                                       ! getFemale( decrementedPlayer ),
