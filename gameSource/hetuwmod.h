@@ -351,6 +351,8 @@ public:
 	static unsigned char charKey_CreateHome;
 	static unsigned char charKey_FixCamera;
 
+	static unsigned char charKey_AutoForgive;
+
 	static bool isCharKey( unsigned char c, unsigned char charKey );
 
 	static time_t lastSpecialEmote;
@@ -584,6 +586,7 @@ public:
 	static char ourGender;
 	static bool bRemapStart;
 	static bool bDrawHungerWarning;
+	static bool bAutoForgiving;
 
 	static bool bFoundFamilyName;
 	static std::vector<FamilyInRange*> familiesInRange;
@@ -803,6 +806,8 @@ private:
 	static void initCustomFont();
 
 	static void drawHungerWarning();
+
+	static void autoForgive();
 };
 
 

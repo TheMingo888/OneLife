@@ -95,6 +95,8 @@ unsigned char HetuwMod::charKey_ShowMap;
 unsigned char HetuwMod::charKey_MapZoomIn;
 unsigned char HetuwMod::charKey_MapZoomOut;
 
+unsigned char HetuwMod::charKey_AutoForgive;
+
 bool HetuwMod::upKeyDown;
 bool HetuwMod::downKeyDown;
 bool HetuwMod::leftKeyDown;
@@ -251,6 +253,7 @@ bool HetuwMod::addBabyCoordsToList = false;
 
 bool HetuwMod::bRemapStart = true;
 bool HetuwMod::bDrawHungerWarning = false;
+bool HetuwMod::bAutoForgiving = false;
 
 std::vector<HetuwMod::HttpRequest*> HetuwMod::httpRequests;
 
@@ -341,6 +344,8 @@ void HetuwMod::init() {
 
 	charKey_CreateHome = 'r';
 	charKey_FixCamera = 'f';
+
+	charKey_AutoForgive = 'l';
 
 	debugRecPos = { 0.0, 0.0 };
 	debugRecPos2 = { 0.0, 0.0 };
@@ -3600,6 +3605,11 @@ bool HetuwMod::livingLifeKeyDown(unsigned char inASCII) {
 		bHidePlayers = !bHidePlayers;
 		return true;
 	}
+	if (commandKey && shiftKey && isCharKey(inASCII+64, charKey_AutoForgive)) {
+		bAutoForgiving = true;
+		autoForgive();
+		return true;
+	}
 	//printf("hetuw unknown key %c, value: %i\n", inASCII, (int)inASCII);
 
 	return false;
@@ -3692,6 +3702,11 @@ bool HetuwMod::livingLifeKeyUp(unsigned char inASCII) {
 		magnetMoveDir = -1;
 		magnetWrongMoveDir = -1;
 		magnetMoveCount = 0;
+	}
+	if (bAutoForgiving && (isCharKey(inASCII, charKey_AutoForgive) || isCharKey(inASCII+64, charKey_AutoForgive))) {
+		bAutoForgiving = false;
+		clearSayBuffer = true;
+		r = true;
 	}
 
 	return r;
@@ -5106,3 +5121,13 @@ void HetuwMod::drawHungerWarning() {
 		drawRect( startPos, viewWidth * guiScale, viewHeight * guiScale );
 	}
 }
+
+void HetuwMod::autoForgive() {
+	for (int i = 0; i < gameObjects->size(); i++) {
+		LiveObject *o = gameObjects->getElement(i);
+		if (o->curseName == NULL && o->name && o != ourLiveObject) {
+			char msg[64] = "";
+			sprintf(msg, "FORGIVE %s", o->name);
+			Say(msg);
+		}
+	}
