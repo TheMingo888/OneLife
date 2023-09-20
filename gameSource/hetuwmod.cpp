@@ -5131,3 +5131,4 @@ void HetuwMod::autoForgive() {
 			Say(msg);
 		}
 	}
+}
