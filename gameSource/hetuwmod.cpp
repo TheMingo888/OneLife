@@ -1732,7 +1732,7 @@ void HetuwMod::Say(const char *text) {
 
 	char *msg = new char[strlen(text)*2+1];
 	int j = 0;
-	for (int i=0; i<strlen(text); c++) {
+	for (int i=0; i<strlen(text); i++) {
 		if (isdigit(text[i])) {
 			// Encode digits using ?A, ?B, ?C, etc. due to server restrictions
 			msg[j++] = '?';
