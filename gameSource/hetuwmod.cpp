@@ -1743,9 +1743,9 @@ void HetuwMod::encodeDigits(const char *plain, char *encoded) {
 	for (size_t i=0; i<len; i++) {
 		if (isdigit(plain[i])) {
 			if (!questionMark) {
+				questionMark = true;
 				encoded[j++] = '?';
 			}
-			questionMark = true;
 			encoded[j++] = 'A' + plain[i] - '0';
 		} else {
 			questionMark = false;
@@ -1765,20 +1765,20 @@ void HetuwMod::decodeDigits(const char *encoded, char *plain) {
 		if (questionMark) {
 			int n = c - 'A';
 			if (n >= 0 && n < 10) {
-				overwritten = true;
+				if (!overwritten) {
+					overwritten = true;
+					j--;
+				}
 				plain[j++] = n + '0';
 				continue;
 			} else {
 				questionMark = false;
-				if (!overwritten) {
-					j++;
-				}
+				overwritten = false;
 			}
 		}
 		plain[j++] = c;
 		if (c == '?') {
 			questionMark = true;
-			j--;
 		}
 	}
 	plain[j] = '\0';
