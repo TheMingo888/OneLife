@@ -1731,17 +1731,41 @@ void HetuwMod::Say(const char *text) {
 	if (bTeachLanguage) bTeachLanguage = false;
 
 	char *msg = new char[strlen(text)*2+1];
+	encodeDigits(text, msg);
+	sayBuffer.push_back(msg);
+}
+
+// Encode digits using 0 = ?A, 1 = ?B, 2 = ?C, etc. due to server restrictions
+void HetuwMod::encodeDigits(char *plain, char *encoded) {
 	int j = 0;
-	for (int i=0; i<strlen(text); i++) {
-		if (isdigit(text[i])) {
-			// Encode digits using ?A, ?B, ?C, etc. due to server restrictions
-			msg[j++] = '?';
-			msg[j++] = 'A' + text[i] - '0';
+	for (int i=0; i<strlen(plain); i++) {
+		if (isdigit(plain[i])) {
+			encoded[j++] = '?';
+			encoded[j++] = 'A' + plain[i] - '0';
 		} else {
-			msg[j++] = text[i];
+			encoded[j++] = plain[i];
 		}
 	}
-	sayBuffer.push_back(msg);
+}
+
+void HetuwMod::decodeDigits(char *encoded, char *plain) {
+	bool questionMark = false;
+	int j = 0;
+	for (int i=0; i<strlen(encoded); i++) {
+		char c = encoded[i];
+		if (questionMark) {
+			questionMark = false;
+			int diff = c - 'A';
+			if (diff >= 0 && diff < 10) {
+				plain[j - 1] = diff + '0';
+				continue;
+			}
+		}
+		if (c == '?') {
+			questionMark = true;
+		}
+		plain[j++] = c;
+	}
 }
 
 void HetuwMod::teachLanguage() {

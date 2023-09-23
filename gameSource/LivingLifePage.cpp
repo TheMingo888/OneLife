@@ -19890,7 +19890,7 @@ void LivingLifePage::step() {
                                     }
                                 
                                 existing->currentSpeech = 
-                                    stringDuplicate( &( firstSpace[1] ) );
+                                    HetuwMod::decodeDigits( &( firstSpace[1] ), stringDuplicate( &( firstSpace[1] ) ));
                                 
 
                                 double curTime = game_getCurrentTime();
