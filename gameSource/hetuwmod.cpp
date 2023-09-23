@@ -1736,7 +1736,7 @@ void HetuwMod::Say(const char *text) {
 		if (isdigit(text[i])) {
 			// Encode digits using ?A, ?B, ?C, etc. due to server restrictions
 			msg[j++] = '?';
-			msg[j++] = 'A' + atoi(text[i])
+			msg[j++] = 'A' + atoi(text[i]);
 		} else {
 			msg[j++] = text[i];
 		}
