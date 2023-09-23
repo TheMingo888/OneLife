@@ -1746,6 +1746,7 @@ void HetuwMod::encodeDigits(const char *plain, char *encoded) {
 			encoded[j++] = plain[i];
 		}
 	}
+	encoded[j] = '\0';
 }
 
 void HetuwMod::decodeDigits(const char *encoded, char *plain) {
@@ -1766,6 +1767,7 @@ void HetuwMod::decodeDigits(const char *encoded, char *plain) {
 		}
 		plain[j++] = c;
 	}
+	plain[j] = '\0';
 }
 
 void HetuwMod::teachLanguage() {
