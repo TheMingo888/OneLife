@@ -1730,8 +1730,17 @@ void HetuwMod::SayStep() {
 void HetuwMod::Say(const char *text) {
 	if (bTeachLanguage) bTeachLanguage = false;
 
-	char *msg = new char[strlen(text)+1];
-	strcpy(msg, text);
+	char *msg = new char[strlen(text)*2+1];
+	int j = 0;
+	for (int i=0; c<strlen(text); c++) {
+		if (isdigit(text[i])) {
+			// Encode digits using ?A, ?B, ?C, etc. due to server restrictions
+			msg[j++] = '?';
+			msg[j++] = 'A' + atoi(text[i])
+		} else {
+			msg[j++] = text[i];
+		}
+	}
 	sayBuffer.push_back(msg);
 }
 
