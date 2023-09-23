@@ -19890,7 +19890,8 @@ void LivingLifePage::step() {
                                     }
                                 
                                 existing->currentSpeech = 
-                                    HetuwMod::decodeDigits( &( firstSpace[1] ), stringDuplicate( &( firstSpace[1] ) ));
+                                    stringDuplicate( &( firstSpace[1] ) );
+                                HetuwMod::decodeDigits( existing->currentSpeech, existing->currentSpeech );  // YumLife mod
                                 
 
                                 double curTime = game_getCurrentTime();
