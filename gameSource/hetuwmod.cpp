@@ -1736,7 +1736,7 @@ void HetuwMod::Say(const char *text) {
 }
 
 // Encode digits using 0 = ?A, 1 = ?B, 2 = ?C, etc. due to server restrictions
-void HetuwMod::encodeDigits(char *plain, char *encoded) {
+void HetuwMod::encodeDigits(const char *plain, char *encoded) {
 	int j = 0;
 	for (int i=0; i<strlen(plain); i++) {
 		if (isdigit(plain[i])) {
@@ -1748,7 +1748,7 @@ void HetuwMod::encodeDigits(char *plain, char *encoded) {
 	}
 }
 
-void HetuwMod::decodeDigits(char *encoded, char *plain) {
+void HetuwMod::decodeDigits(const char *encoded, char *plain) {
 	bool questionMark = false;
 	int j = 0;
 	for (int i=0; i<strlen(encoded); i++) {
