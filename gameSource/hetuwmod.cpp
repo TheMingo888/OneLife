@@ -1737,12 +1737,18 @@ void HetuwMod::Say(const char *text) {
 
 // Encode digits using 0 = ?A, 1 = ?B, 2 = ?C, etc. due to server restrictions
 void HetuwMod::encodeDigits(const char *plain, char *encoded) {
+	bool questionMark = false;
 	int j = 0;
-	for (int i=0; i<strlen(plain); i++) {
+	size_t len = strlen(plain);
+	for (size_t i=0; i<len; i++) {
 		if (isdigit(plain[i])) {
-			encoded[j++] = '?';
+			if (!questionMark) {
+				encoded[j++] = '?';
+			}
+			questionMark = true;
 			encoded[j++] = 'A' + plain[i] - '0';
 		} else {
+			questionMark = false;
 			encoded[j++] = plain[i];
 		}
 	}
@@ -1751,21 +1757,29 @@ void HetuwMod::encodeDigits(const char *plain, char *encoded) {
 
 void HetuwMod::decodeDigits(const char *encoded, char *plain) {
 	bool questionMark = false;
+	bool overwritten = false;
 	int j = 0;
-	for (int i=0; i<strlen(encoded); i++) {
+	size_t len = strlen(encoded);
+	for (size_t i=0; i<len; i++) {
 		char c = encoded[i];
 		if (questionMark) {
-			questionMark = false;
-			int diff = c - 'A';
-			if (diff >= 0 && diff < 10) {
-				plain[j - 1] = diff + '0';
+			int n = c - 'A';
+			if (n >= 0 && n < 10) {
+				overwritten = true;
+				plain[j++] = n + '0';
 				continue;
+			} else {
+				questionMark = false;
+				if (!overwritten) {
+					j++;
+				}
 			}
 		}
+		plain[j++] = c;
 		if (c == '?') {
 			questionMark = true;
+			j--;
 		}
-		plain[j++] = c;
 	}
 	plain[j] = '\0';
 }
