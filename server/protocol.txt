@@ -232,6 +232,8 @@ CRAVING (CR)
 
 FRAME (FM)
 
+GHOST (GH)
+
 PONG
 
 
@@ -1053,6 +1055,17 @@ are part of the same batch and can be played back together on the client.
 
 
 
+GH
+p_id
+p_id
+...
+p_id#
+
+Indicates that the players associated with listed p_id have become an invisible
+ghosts.
+
+
+
 PONG
 unique_id#
 
@@ -1110,6 +1123,8 @@ UNFOL x y#
 PROP x y#
 ORDR x y#
 FLIP x y#
+MOTH X Y#
+
 
 KA   is a keep-alive message used to keep the connection alive when the client
      is idle and not sending any other messages (NATs and other routers can
@@ -1238,6 +1253,9 @@ ORDR repeats display of last-heard order from this player's leader.
      x and y are ignored
 
 FLIP requests flip to player's orientation, new facing toward x y
+
+MOTH requests the player's mother's position as spoken map coordinates.
+     x and y are ignored
 
 
 

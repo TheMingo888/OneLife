@@ -584,6 +584,7 @@ public:
 	static char ourGender;
 	static bool bRemapStart;
 	static bool bDrawHungerWarning;
+	static int delayReduction;
 
 	static bool bFoundFamilyName;
 	static std::vector<FamilyInRange*> familiesInRange;
@@ -603,6 +604,8 @@ public:
 	static void SetFixCamera(bool b);
 
 	static void Say(const char *text);
+	static void encodeDigits(const char *plain, char *encoded);
+	static void decodeDigits(char *msg);
 	static void causeDisconnect();
 
 	static float colorRainbowFast[3];

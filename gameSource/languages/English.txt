@@ -455,6 +455,8 @@ expt "EXPT"
 owner "OWN"
 visitor "VSTR"
 property "PROP"
+mother2 "MOM"
+
 
 babyLabel "+BABY+"
 leadLabel "+LEADER+"
@@ -526,11 +528,16 @@ propertyCommand "/PROPERTY"
 
 orderCommand "/ORDER"
 
+motherCommand "/MOTHER"
+
+
 
 familyLabel "+FAMILY+"
 leaderLabel "+LEADER+"
 followerLabel "+FOLLOWER+"
 allyLabel "+ALLY+"
+
+mother2Label "+MOTHER+"
 
 
 
@@ -545,7 +552,7 @@ noAllyCountMessage "YOU HAVE NO ALLIES."
 
 
 
-orderCommand "ORDER,"
+orderPrefix "ORDER,"
 
 
 
@@ -594,6 +601,9 @@ reasonSID "CAUSE:  SUDDEN INFANT DEATH"
 reasonUnknown "CAUSE:  UNKNOWN"
 
 reasonApocalypse "CAUSE:  THE APOCALYPSE"
+
+reasonExorcism "CAUSE:  EXORCISM"
+
 
 
 connectionLost "CONNECTION LOST"
@@ -801,10 +811,10 @@ pauseMessage4 "-"
 
 
 
-commandHintsA "CHAT COMMANDS:##~~##/FAM##/DIE##/DISCONNECT##/FPS##/NETWORK##/PING####/HAPPY##/MAD##/ANGRY##/SAD##/DEVIOUS##/JOY##/BLUSH##/HUBBA##/ILL##/YOOHOO##/HMPH##/LOVE##/OREALLY##/SHOCK"
+commandHintsA "CHAT COMMANDS:##~~##/FAM##/DIE##/DISCONNECT##/FPS##/NETWORK##/PING####/HAPPY   /POINT##/MAD   /WAIT##/ANGRY   /WAVE##/SAD   /HERE##/DEVIOUS##/JOY   /UPYOURS##/BLUSH##/HUBBA##/ILL##/YOOHOO##/HMPH##/LOVE##/OREALLY##/SHOCK"
 
 
-commandHintsB "/LEADER##/FOLLOWER##/ALLY   /ORDER##/UNFOLLOW##/PROPERTY####I AM [NAME]##YOU ARE [NAME]##CURSE [NAME]##I FORGIVE [NAME]##[NAME] OWNS THIS##I'LL KILL [NAME]##I JOIN YOU##I FOLLOW [NAME]##I EXILE [NAME]##I REDEEM [NAME]##ORDER, [TEXT]##~~##NOTE:##~~##'YOU' FOR [NAME]##IS CLOSEST PERSON##LIKE: 'CURSE YOU'"
+commandHintsB "/LEADER  /MOTHER##/FOLLOWER##/ALLY   /ORDER##/UNFOLLOW##/PROPERTY####I AM [NAME]##YOU ARE [NAME]##CURSE [NAME]##I FORGIVE [NAME]##[NAME] OWNS THIS##I'LL KILL [NAME]##I JOIN YOU##I FOLLOW [NAME]##I EXILE [NAME]##I REDEEM [NAME]##ORDER, [TEXT]##~~##NOTE:##~~##'YOU' FOR [NAME]##IS CLOSEST PERSON##LIKE: 'CURSE YOU'"
 
 
 

@@ -18,6 +18,7 @@
 #include "photos.h"
 #include "phex.h"
 #include "hetuwFont.h"
+#include "yumBlob.h"
 
 using namespace std;
 
@@ -49,7 +50,7 @@ int HetuwMod::tutMessageOffsetX2;
 HetuwMod::RainbowColor *HetuwMod::colorRainbow;
 
 LivingLifePage *HetuwMod::livingLifePage;
-LiveObject *HetuwMod::ourLiveObject;
+LiveObject *HetuwMod::ourLiveObject = NULL;
 
 bool HetuwMod::bDrawHelp;
 
@@ -253,6 +254,8 @@ bool HetuwMod::addBabyCoordsToList = false;
 bool HetuwMod::bRemapStart = true;
 bool HetuwMod::bDrawHungerWarning = false;
 
+int HetuwMod::delayReduction = 0;
+
 std::vector<HetuwMod::HttpRequest*> HetuwMod::httpRequests;
 
 bool HetuwMod::connectedToMainServer = false;
@@ -289,6 +292,8 @@ float HetuwMod::raceColor_black[] = {0.250980, 0.168627, 0.164706};
 extern doublePair lastScreenViewCenter;
 
 void HetuwMod::init() {
+	blobs::font_32_64_yum.write("graphics/font_32_64_yum.tga");
+
 	mouseRelativeToView = {0, 0};
 
 	viewWidthToHeightFactor = defaultViewWidth/(double)defaultViewHeight;
@@ -944,6 +949,14 @@ bool HetuwMod::setSetting( const char* name, const char* value ) {
 		bDrawHungerWarning = bool(value[0]-'0');
 		return true;
 	}
+	if (strstr(name, "reduce_delay")) {
+		delayReduction = stoi(value);
+		if (delayReduction < 0)
+			delayReduction = 0;
+		if (delayReduction > 50)
+			delayReduction = 50;
+		return true;
+	}
 
 	return false;
 }
@@ -1049,6 +1062,10 @@ void HetuwMod::writeSettings(ofstream &ofs) {
 	ofs << endl;
 	ofs << "remap_start_enabled = " << (char)(bRemapStart+48) << " // enable mushroom effect" << endl;
 	ofs << "draw_hunger_warning = " << (char)(bDrawHungerWarning+48) << endl;
+	ofs << endl;
+	ofs << "// Reduce action delay by the given percentage, 0-50." << endl;
+	ofs << "// Higher values may cause server disconnects." << endl;
+	ofs << "reduce_delay = " << delayReduction << endl;
 }
 
 void HetuwMod::initSettings() {
@@ -1731,9 +1748,58 @@ void HetuwMod::SayStep() {
 void HetuwMod::Say(const char *text) {
 	if (bTeachLanguage) bTeachLanguage = false;
 
-	char *msg = new char[strlen(text)+1];
-	strcpy(msg, text);
+	char *msg = new char[strlen(text)*2+1];
+	encodeDigits(text, msg);
 	sayBuffer.push_back(msg);
+}
+
+// Encode digits using 0 = ?A, 1 = ?B, 2 = ?C, etc. due to server restrictions
+void HetuwMod::encodeDigits(const char *plain, char *encoded) {
+	bool questionMark = false;
+	int j = 0;
+	size_t len = strlen(plain);
+	for (size_t i=0; i<len; i++) {
+		if ('0' <= plain[i] && plain[i] <= '9') {
+			if (!questionMark) {
+				questionMark = true;
+				encoded[j++] = '?';
+			}
+			encoded[j++] = 'A' + plain[i] - '0';
+		} else {
+			questionMark = false;
+			encoded[j++] = plain[i];
+		}
+	}
+	encoded[j] = '\0';
+}
+
+void HetuwMod::decodeDigits(char *msg) {
+	bool questionMark = false;
+	bool overwritten = false;
+	int j = 0;
+	size_t len = strlen(msg);
+	for (size_t i=0; i<len; i++) {
+		char c = msg[i];
+		if (questionMark) {
+			int n = c - 'A';
+			if (n >= 0 && n < 10) {
+				if (!overwritten) {
+					overwritten = true;
+					j--;
+				}
+				msg[j++] = n + '0';
+				continue;
+			} else {
+				questionMark = false;
+				overwritten = false;
+			}
+		}
+		msg[j++] = c;
+		if (c == '?') {
+			questionMark = true;
+		}
+	}
+	msg[j] = '\0';
 }
 
 void HetuwMod::teachLanguage() {
@@ -3754,6 +3820,36 @@ bool HetuwMod::livingLifeSpecialKeyDown(unsigned char inKeyCode) {
 	        livingLifePage->sendToServerSocket( message );
 			r = true;
 		}
+		if ( inKeyCode == MG_KEY_F5 ) {
+			currentEmote = -1;
+			char message[] = "EMOT 0 0 34#"; // POINT
+	        livingLifePage->sendToServerSocket( message );
+			r = true;
+		}
+		if ( inKeyCode == MG_KEY_F6 ) {
+			currentEmote = -1;
+			char message[] = "EMOT 0 0 35#"; // WAIT
+	        livingLifePage->sendToServerSocket( message );
+			r = true;
+		}
+		if ( inKeyCode == MG_KEY_F7 ) {
+			currentEmote = -1;
+			char message[] = "EMOT 0 0 36#"; // WAVE
+	        livingLifePage->sendToServerSocket( message );
+			r = true;
+		}
+		if ( inKeyCode == MG_KEY_F8 ) {
+			currentEmote = -1;
+			char message[] = "EMOT 0 0 37#"; // HERE
+	        livingLifePage->sendToServerSocket( message );
+			r = true;
+		}
+		if ( inKeyCode == MG_KEY_F9 ) {
+			currentEmote = -1;
+			char message[] = "EMOT 0 0 38#"; // UPYOURS
+	        livingLifePage->sendToServerSocket( message );
+			r = true;
+		}
 	}
 
 	return r;
@@ -4912,18 +5008,18 @@ void HetuwMod::drawHelp() {
 	drawPos.x -= viewWidth/2 - 20*guiScale;
 	drawPos.y += viewHeight/2 - 80*guiScale;
 	SimpleVector<Emotion> emotions = hetuwGetEmotions();
-    for( int i=0; i<emotions.size()-1; i++ ) {
-		if (i == 7 || i == 8) continue;
-		int id = i;
-		if (i > 6) id -= 2;
-
-		if (strstr(emotions.getElement(i)->triggerWord, "/") == NULL) continue;
-
-		if (id < 10) sprintf(str, " %i: %s", id, emotions.getElement(i)->triggerWord);
-		else sprintf(str, "F%i: %s", id-9, emotions.getElement(i)->triggerWord);
-
-		livingLifePage->hetuwDrawScaledHandwritingFont( str, drawPos, guiScale );
-		drawPos.y -= lineHeight;
+	int j = 0;
+	for (int i = 0; i < emotions.size(); i++) {
+		char *emote = emotions.getElement(i)->triggerWord;
+		if (strstr(emote, "/")) {
+			if (j < 10) {
+				sprintf(str, " %i: %s", j++, emote);
+			} else {
+				sprintf(str, "F%i: %s", j++ - 9, emote);
+			}
+			livingLifePage->hetuwDrawScaledHandwritingFont( str, drawPos, guiScale );
+			drawPos.y -= lineHeight;
+		}
 	}
 	drawPos.y -= lineHeight;
 	livingLifePage->hetuwDrawScaledHandwritingFont( "PRESS NUMBER KEY FOR SHORT EMOTE", drawPos, guiScale );
@@ -4931,10 +5027,6 @@ void HetuwMod::drawHelp() {
 	livingLifePage->hetuwDrawScaledHandwritingFont( "WRITE EMOTE FOR PERMANENT EMOTE", drawPos, guiScale );
 	drawPos.y -= lineHeight;
 
-	drawPos.y -= lineHeight;
-	drawPos.y -= lineHeight;
-	drawPos.y -= lineHeight;
-	drawPos.y -= lineHeight;
 	drawPos.y -= lineHeight;
 	sprintf(str, "YOU CAN CHANGE KEYS AND SETTINGS BY MODIFYING THE HETUW.CFG FILE");
 	livingLifePage->hetuwDrawScaledHandwritingFont( str, drawPos, guiScale );

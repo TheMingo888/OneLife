@@ -1,9 +1,8 @@
 # What's this?
 
-YumLife is a fork of [hetuw](https://github.com/hetuw/OneLife). The primary
-goal is to keep hetuw's excellent feature set while staying up to date with the
-latest changes to the vanilla OHOL client. Some additional bugfixes and "must
-have" features from other mods will also be added over time.
+YumLife is a fork of [hetuw](https://github.com/hetuw/OneLife). The goals of
+this mod are to stay up to date with the latest changes to the vanilla OHOL
+client, fix bugs, and occasionally add useful features.
 
 # Installing (and updating)
 
@@ -19,12 +18,13 @@ have" features from other mods will also be added over time.
 
 1. Make sure you have the latest version of the game. The URL to re-download is: `http://onehouronelife.com/ticketServer/server.php?action=show_downloads&ticket_id=YOURKEYHERE`
 2. Run the vanilla `OneLife.exe` once to download any necessary updates.
-3. Install the mod into the OHOL installation folder (same folder as the vanilla `OneLife.exe`).
-4. Run the mod from the OHOL installation folder.
+3. Download the latest version of the mod from [the Releases page](https://github.com/selb/YumLife/releases). For Windows, this is YumLife_windows.exe.
+4. Install the mod into the OHOL installation folder (same folder as the vanilla `OneLife.exe`).
+5. Run the mod from the OHOL installation folder.
 
 # Usage
 
-Press `H` in-game to see everything the mod can do. A `hetuw.cfg` file is
+Press `H` in-game to see everything the mod can do. A `yumlife.cfg` file is
 generated in the OHOL install folder and can be tweaked to your liking.
 
 # Troubleshooting

@@ -4,6 +4,160 @@ http://onehouronelife.com/updateLog.php
 
 
 
+Version 399     2023-October-28
+
+--Support for new GH message.
+
+--Support for destroyed GH cause of death.
+
+--Was depending on headIndex=-1 to detect person for headless/bodyless check,
+  but getHeadIndex never returns -1.  Check if object is a person instead.
+
+
+
+
+Server Fixes:
+
+--Fixed bug that wasn't actually setting cursed status of players that were
+  sent to Donkeytown.  This was causing all kinds of issues (non-Donkeytown
+  players could be born to them as mothers, they were being pointed toward as
+  experts, etc.)  This was apparently covered up for a long time while birth
+  cooldowns were mistakenly set to zero.  Related to #967
+
+--Support for new GH message and sending associated emote.
+
+--Support for GH destroy phrases.
+
+
+
+
+
+Version 397    2023-October-20
+
+--Fixed ambiguity in English.txt file with two orderCommand values defined.
+  Fixes #950
+
+--Gesture maintained when flipping left/right due to mouse movement.
+  Part of #953
+
+--Fixed so that gestures from players don't overwrite each other (which was
+  causing a player's gestures to switch randomly as other players gesture on
+  the same sever).  Fixes #953
+
+
+
+
+
+Editor Fixes:
+
+--Pickers now show 4 lines of text per item until mouse-over, when text of
+  moused item is expanded.  No more overlapping text in pickers, for items
+  with long descriptions.
+
+--Description field in Object Editor automatically rewinds to start of field
+  when a new object is loaded (it used to auto-position at the end of the text
+  description).
+
+
+
+
+Server Fixes:
+
+--Fixed so that if you disconnect and re-join the game, you always rejoin an
+  existing life if you're still alive, even if you request twin status during
+  the re-join.  Before, a request for twin status during rejoin would result in
+  your previous life suddenly ending.  Fixes #934
+
+--When top leader uses the /LEADER command, it now tells them that they are the
+  leader, and tells them their title.  It used to say +NO LEADER+, which was
+  confusing, since that is what is also shown for players who are leaderless.
+  Fixes #936
+
+--Fixed so that when picking female character for Eve, when all races are
+  already evenly represented, with pick a race at random first, and then pick a
+  female character from that race.  Before, we just picked a random female
+  character, but that means that some races get picked more than others
+  (because some races have more female characters than others).  Fixes #938
+
+--Message flood detection improved by not waiting for the full batch time (5
+  seconds) to elapse before checking how many messages have been received
+  during the current time batch.  I.e., if they send more than 40 messages in
+  the first second, we don't wait 4 more seconds before cutting them off.
+  Fixes #939
+
+--Fixed a crash caused by code changes for #938, when picking a new Eve.
+
+--Fixed so that giver gets notice when their gift of property works (or doesn't
+   work).  Before, only receiver got notice.  Fixes #963
+
+--Whoops!  A forced birth cooldown of 0 seconds got pushed back in July 2023.
+  I sometimes do this during local testing, but I forgot to revert it before
+  committing back in July.  Fixed.
+
+--Players who have played less than 25 lives are not given special roles based
+  on their fitness scores.  Fixes #966
+
+
+
+
+
+
+Version 394    2023-October-6
+
+--New /MOTHER command to locate your mother (sometimes she's not your leader,
+  so the /LEADER command doesn't always work to find her).  Fixes #926
+
+--Support for using extra animation slots in emotes.
+
+
+
+
+Editor Fixes:
+
+--Made animation freeze slider in scene editor cover more time range, to be
+  able to feeze action later in an animation.
+
+--Sound widget now has text field for volume instead of just a slider, making
+  even quieter volumes settable.
+
+--Animation editor can now clone extras animations from one person to all other
+  people, with intelligent matching of sprites (with same position and age
+  range).
+
+--Animation editor can now clone extras from one person object to another.
+
+--Scene editor can now display gesture emotes.
+
+
+
+
+Server Fixes:
+
+--Touching your own race's waystone now always points you to a language expert,
+  even if population falls below special biome threshold.  Expert waystones
+  always work, regardless of population size.  Fixes #924
+
+--Support for new wound-on-player generic transition that specifies what a
+  partly-healed wound would leave embedded in grave if person dies with that
+  wound.  For example, if you pull the arrow out, and leave the head embedded
+  in, they can now have the head left in their grave when they die. Part of
+  jasonrohrer/OneLifeData7#1047
+
+--Fixed so server looks for camera-on-camera transition when taking photo,
+  instead of player-on-camera transition, so the player can't interrupt the
+  process by clicking on the camera again mid-photo.  Part of
+  jasonrohrer/OneLifeData7#1060
+
+--Fixed content build scripts and Steam VDF file to not try to push build live
+  to the public branch automatically (which now gets Access Denied based on new
+  Steam security settings released in Sept 2023).  Instead the build script now
+  pauses and waits for the user to use the Steamworks website to manually make
+  the build live.
+
+
+
+
+
 Version 391    2023-September-15
 
 --Fixed visual glitch when paved road hugged nearby walls.  Fixes #921
@@ -14,6 +168,8 @@ Version 391    2023-September-15
   I'm pretty sure that every sprite layer marked as drawn behind is a flat
   layer that lays on the ground, and that this won't cause any other visual
   problems.  Part of jasonrohrer/OneLifeData7#1038
+
+--Fixed photoCache compiling on mac.
 
 
 

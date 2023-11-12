@@ -515,6 +515,8 @@ static int getLocationKeyPriority( const char *inPersonKey ) {
         strcmp( inPersonKey, "expt" ) == 0 ||
         // explicitly touched a locked gate
         strcmp( inPersonKey, "owner" ) == 0 ||
+        // manually requested mother location
+        strcmp( inPersonKey, "mother" ) == 0 ||
         // manually-requested leader arrow
         ( leaderCommandTyped && strcmp( inPersonKey, "lead" ) == 0 ) ) {
         
@@ -1386,6 +1388,7 @@ typedef enum messageType {
     HOMELAND,
     FLIP,
     CRAVING,
+    GHOST,
     PONG,
     COMPRESSED_MESSAGE,
     UNKNOWN
@@ -1556,6 +1559,9 @@ messageType getMessageType( char *inMessage ) {
         }
     else if( strcmp( copy, "CR" ) == 0 ) {
         returnValue = CRAVING;
+        }
+    else if( strcmp( copy, "GH" ) == 0 ) {
+        returnValue = GHOST;
         }
     
     delete [] copy;
@@ -2105,6 +2111,8 @@ static int maxChunkDimension = 32;
 
 
 static char isAutoClick = false;
+
+bool LivingLifePage::hetuwIsAutoClick() { return isAutoClick; }
 
 
 static void findClosestPathSpot( LiveObject *inObject ) {
@@ -2779,6 +2787,7 @@ void LivingLifePage::clearMap() {
 
 LivingLifePage::LivingLifePage() 
         : mServerSocket( -1 ), 
+          mServerSocketOld( -1 ),
           mForceRunTutorial( 0 ),
           mTutorialNumber( 0 ),
           mGlobalMessageShowing( false ),
@@ -3336,6 +3345,11 @@ LivingLifePage::~LivingLifePage() {
     if( mServerSocket != -1 ) {
         closeSocket( mServerSocket );
         mServerSocket = -1;
+        }
+    
+    if ( mServerSocketOld != -1 ) {
+        closeSocket( mServerSocketOld );
+        mServerSocketOld = -1;
         }
     
     for( int j=0; j<2; j++ ) {
@@ -4849,6 +4863,10 @@ ObjectAnimPack LivingLifePage::drawLiveObject(
     SimpleVector<LiveObject *> *inSpeakers,
     SimpleVector<doublePair> *inSpeakersPos ) {    
 
+    setExtraIndex( inObj->extraAnimIndex );
+    setExtraIndexB( inObj->extraAnimIndexB );
+    
+
     ObjectAnimPack returnPack;
     returnPack.inObjectID = -1;
 
@@ -5080,10 +5098,12 @@ ObjectAnimPack LivingLifePage::drawLiveObject(
         ( inObj->lastHoldingID > 0 && 
           getObject( inObj->lastHoldingID )->rideable ) ) {
     
-        if( curType == ground2 || curType == moving ) {
+        if( curType == ground2 || curType == moving ||
+            curType == extra || curType == extraB ) {
             frozenArmType = moving;
             }
-        if( fadeTargetType == ground2 || fadeTargetType == moving ) {
+        if( fadeTargetType == ground2 || fadeTargetType == moving ||
+            fadeTargetType == extra || fadeTargetType == extraB ) {
             frozenArmFadeTargetType = moving;
             }
         }
@@ -6646,7 +6666,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
             drawMessage( "waitingArrival", pos );
 			HetuwMod::drawWaitingText(pos);
             }
-        else if( userTwinCode == NULL ) {
+        else if( userTwinCode == NULL || userTwinCount == 1 ) {
             drawMessage( "waitingBirth", pos );
 			HetuwMod::drawWaitingText(pos);
             }
@@ -8177,9 +8197,19 @@ void LivingLifePage::draw( doublePair inViewCenter,
                 
                 ignoreWatchedObjectDraw( true );
 
+
+                if( ourLiveObject->isGhost ) {
+                    // ghosts can see other ghosts
+                    toggleInvertDrawBodyless( true );
+                    }
+                
                 ObjectAnimPack heldPack =
                     drawLiveObject( o, &speakers, &speakersPos );
-                
+
+                if( ourLiveObject->isGhost ) {
+                    toggleInvertDrawBodyless( false );
+                    }
+
                 if( heldPack.inObjectID != -1 ) {
                     // holding something, not drawn yet
                     
@@ -11297,7 +11327,20 @@ void LivingLifePage::draw( doublePair inViewCenter,
     if( showFPS ) {
         timeMeasures[2] += game_getCurrentTime() - drawStartTime;
         }
+
     
+    if( ourLiveObject->isGhost ) {
+        
+        // invert the colors on the ghost's view
+
+        toggleInvertedBlend( true );
+    
+        setDrawColor( 1, 1, 1, 1 );
+        
+        drawSquare( lastScreenViewCenter, inViewSize );
+        
+        toggleInvertedBlend( false );
+        }
     }
 
 
@@ -13085,6 +13128,11 @@ void LivingLifePage::step() {
         }
     
 
+    if ( mServerSocketOld != -1 && pageLifeTime > 10 ) {
+        // YumLife: close old socket after reconnecting due to /reborn or /tutorial
+        closeSocket( mServerSocketOld );
+        mServerSocketOld = -1;
+        }
     
     
     if( pageLifeTime < 1 ) {
@@ -13639,7 +13687,7 @@ void LivingLifePage::step() {
     
     
 
-    if( ourObject != NULL ) {
+    if( ourObject != NULL && areLiveTriggersEnabled() ) {
         char newTrigger = false;
         
         AnimType anim = stepLiveTriggers( &newTrigger );
@@ -14634,8 +14682,18 @@ void LivingLifePage::step() {
                             flip = true;
                             }
                         if( flip ) {
+                            
+                            AnimType returnToType = ground2;
+                            
+                            if( o->curAnim == extra ) {
+                                returnToType = extra;
+                                }
+                            else if( o->curAnim == extraB ) {
+                                returnToType = extraB;
+                                }
+                            
                             o->lastAnim = moving;
-                            o->curAnim = ground2;
+                            o->curAnim = returnToType;
                             o->lastAnimFade = 1;
 
                             o->lastHeldAnim = moving;
@@ -14659,6 +14717,36 @@ void LivingLifePage::step() {
             if( numRead == 2 ) {
                 setNewCraving( foodID, bonus );
                 }
+            }
+        else if( type == GHOST ) {
+            int numLines;
+            char **lines = split( message, "\n", &numLines );
+            
+            if( numLines > 0 ) {
+                // skip first
+                delete [] lines[0];
+                }
+            
+            for( int i=1; i<numLines; i++ ) {
+                int id;
+                int numRead = sscanf( lines[i], "%d ",
+                                      &( id ) );
+
+                if( numRead == 1 ) {
+                    for( int j=0; j<gameObjects.size(); j++ ) {
+                        if( gameObjects.getElement(j)->id == id ) {
+                            
+                            LiveObject *existing = gameObjects.getElement(j);
+                            
+                            existing->isGhost = true;
+                            
+                            break;
+                            }
+                        }
+                    }
+                delete [] lines[i];
+                }
+            delete [] lines;
             }
         else if( type == SEQUENCE_NUMBER ) {
             // need to respond with LOGIN message
@@ -16998,6 +17086,10 @@ void LivingLifePage::step() {
                 o.currentEmot = NULL;
                 o.emotClearETATime = 0;
                 
+                o.extraAnimType = extraB;
+                o.extraAnimIndex = 0;
+                o.extraAnimIndexB = 0;
+
                 o.killMode = false;
                 o.killWithID = -1;
                 o.chasingUs = false;
@@ -17016,6 +17108,8 @@ void LivingLifePage::step() {
                 o.leadershipNameTag = NULL;
                 
                 o.isGeneticFamily = false;
+                
+                o.isGhost = false;
                 
 
                 int forced = 0;
@@ -18904,6 +18998,10 @@ void LivingLifePage::step() {
                                     "tutorialDone", mTutorialNumber );
                                 }
                             }
+                        else if( strcmp( reasonString, "exorcism" ) == 0 ) {
+                            mDeathReason = stringDuplicate( 
+                                translate( "reasonExorcism" ) );
+                            }
                         else if( strcmp( reasonString, "disconnected" ) == 0 ) {
                             mDeathReason = stringDuplicate( 
                                 translate( "reasonDisconnected" ) );
@@ -19924,6 +20022,7 @@ void LivingLifePage::step() {
                                 
                                 existing->currentSpeech = 
                                     stringDuplicate( &( firstSpace[1] ) );
+                                HetuwMod::decodeDigits( existing->currentSpeech );  // YumLife mod
                                 
 
                                 double curTime = game_getCurrentTime();
@@ -20119,6 +20218,24 @@ void LivingLifePage::step() {
 
                                                 visitorPos[0] = '\0';
                                                 personKey = "visitor";
+                                                }
+                                            }
+
+
+                                        if( ! person ) {
+                                            char *motherPos = 
+                                                strstr( 
+                                                    existing->currentSpeech, 
+                                                    " *mother" );
+                                            
+                                            if( motherPos != NULL ) {
+                                                person = true;
+                                                sscanf( motherPos, 
+                                                        " *mother %d", 
+                                                        &personID );
+
+                                                motherPos[0] = '\0';
+                                                personKey = "mother2";
                                                 }
                                             }
                                         
@@ -20422,6 +20539,49 @@ void LivingLifePage::step() {
                                 if( oldEmot != existing->currentEmot &&
                                     existing->currentEmot != NULL ) {
                                     newEmotPlaySound = existing->currentEmot;
+                                    
+                                    }
+                                
+                                if( existing->currentEmot != NULL ) {
+                                    if( existing->currentEmot->extraAnimIndex
+                                        > -1 
+                                        &&
+                                        computeCurrentAge( existing ) >= 1 ) {
+                                        
+                                        // don't allow extra animations
+                                        // for emotes for people who
+                                        // are less that 1 year old
+                                        // since they can revert back
+                                        // to crying at any time
+                                        // and we don't want to interfere
+                                        // with their crying animaton
+
+
+                                        // toggle back and forth
+                                        // between extra slots so that
+                                        // extra animations can transition
+                                        // smoothly
+                                        if( existing->extraAnimType ==
+                                            extraB ) {
+                                            
+                                            addNewAnimPlayerOnly( existing, 
+                                                                  extra );
+                                            existing->extraAnimType = extra;
+                                            
+                                            existing->extraAnimIndex =
+                                                existing->currentEmot->
+                                                extraAnimIndex;
+                                            }
+                                        else {
+                                            addNewAnimPlayerOnly( existing, 
+                                                                  extraB );
+                                            existing->extraAnimType = extraB;
+                                            
+                                            existing->extraAnimIndexB =
+                                                existing->currentEmot->
+                                                extraAnimIndex;
+                                            }
+                                        }
                                     }
                                 }
                             
@@ -22247,9 +22407,11 @@ void LivingLifePage::step() {
                                 // avoid clicks on self and objects
                                 // when walking on road
                                 mForceGroundClick = true;
+                                isAutoClick = true; // YumLife: make this an auto click to stop interfering with Phex while on road
                                 pointerDown( nextStep.x * CELL_D, 
                                              nextStep.y * CELL_D );
-                                
+                                isAutoClick = false;
+
                                 pointerUp( nextStep.x * CELL_D, 
                                            nextStep.y * CELL_D );
                                 
@@ -22427,6 +22589,16 @@ void LivingLifePage::step() {
             }
         
         
+        double delay = 0.166;
+        // Don't apply delay reduction for baby pickup. These are other
+        // players, not in-game objects, so they are more likely to be annoyed
+        // by being juggled extra fast. It is also possible (but rare) for
+        // excessive baby juggling to cause a client-side desync, and delay
+        // reduction might increase the odds of accidentally triggering this.
+        if (0 != strncmp("BABY ", nextActionMessageToSend, 5)) {
+            delay = delay * (100 - HetuwMod::delayReduction) / 100;
+            }
+
         // wait until 
         // we've stopped moving locally
         // AND animation has played for a bit
@@ -22435,7 +22607,7 @@ void LivingLifePage::step() {
         // AND server agrees with our position
         if( ! ourLiveObject->inMotion && 
             currentTime - ourLiveObject->pendingActionAnimationStartTime > 
-            0.166 - ourLiveObject->lastResponseTimeDelta &&
+            delay - ourLiveObject->lastResponseTimeDelta &&
             ourLiveObject->xd == ourLiveObject->xServer &&
             ourLiveObject->yd == ourLiveObject->yServer ) {
  
@@ -23897,8 +24069,18 @@ void LivingLifePage::pointerMove( float inX, float inY ) {
             }
 
         if( flip ) {
+            
+            AnimType returnToType = ground2;
+            
+            if( ourLiveObject->curAnim == extra ) {
+                returnToType = extra;
+                }
+            else if( ourLiveObject->curAnim == extraB ) {
+                returnToType = extraB;
+                }
+
             ourLiveObject->lastAnim = moving;
-            ourLiveObject->curAnim = ground2;
+            ourLiveObject->curAnim = returnToType;
             ourLiveObject->lastAnimFade = 1;
             
             ourLiveObject->lastHeldAnim = moving;
@@ -26374,6 +26556,11 @@ void LivingLifePage::keyDown( unsigned char inASCII ) {
                                 sendToServerSocket( (char*)"LEAD 0 0#" );
                                 }
                             else if( commandTyped( typedText, 
+                                                   "motherCommand" ) ) {
+
+                                sendToServerSocket( (char*)"MOTH 0 0#" );
+                                }
+                            else if( commandTyped( typedText, 
                                                    "followerCommand" ) ) {
                                 
                                 const char *followerLabel = 
@@ -26485,6 +26672,28 @@ void LivingLifePage::keyDown( unsigned char inASCII ) {
                                                    "orderCommand" ) ) {
                                 sendToServerSocket( (char*)"ORDR 0 0#" );
                                 }
+                            else if( commandTyped( typedText, "/REBORN" ) ||
+                                     commandTyped( typedText, "/TUTORIAL" ) ) {
+                                // YumLife mod
+                                if ( computeCurrentAge( ourLiveObject ) < 2 ) {
+                                    char *message = autoSprintf( "DIE 0 0#" );
+                                    sendToServerSocket( message );
+                                    delete [] message;
+                                    }
+                                else {
+                                    if ( mServerSocketOld != -1 ) {
+                                        closeSocket( mServerSocketOld );
+                                        }
+                                    mServerSocketOld = mServerSocket;
+                                    mServerSocket = -1;
+                                    if( commandTyped( typedText, "/REBORN" ) ) {
+                                        setSignal( "reborn" );
+                                        }
+                                    else {
+                                        setSignal( "tutorial" );
+                                        }
+                                    }
+                                }
                             else {
                                 // filter hints
                                 char *filterString = 
@@ -26524,7 +26733,7 @@ void LivingLifePage::keyDown( unsigned char inASCII ) {
                         // actual, spoken text, not a /command
                         
                         if( strstr( typedText,
-                                    translate( "orderCommand" ) ) 
+                                    translate( "orderPrefix" ) ) 
                             == typedText ) {
                             
                             // when issuing an order, place +FOLLOWER+

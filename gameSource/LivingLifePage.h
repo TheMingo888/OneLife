@@ -324,6 +324,17 @@ typedef struct LiveObject {
         SimpleVector<Emotion*> permanentEmots;
         
 
+        // either extra or extraB
+        // toggle back and forth as we switch emotes that have
+        // extraAnimIndex defined
+        AnimType extraAnimType;
+        
+        // for a given person, track what extraAnimIndex should be used
+        // for both extra and extraB slots
+        int extraAnimIndex;
+        int extraAnimIndexB;
+
+
         char killMode;
         int killWithID;
         
@@ -370,6 +381,8 @@ typedef struct LiveObject {
         
         char isGeneticFamily;
         
+        char isGhost;
+
     } LiveObject;
 
 
@@ -577,6 +590,7 @@ class LivingLifePage : public GamePage, public ActionListener {
 		bool hetuwIsVogMode();
 		doublePair hetuwGetVogPos();
         int hetuwGetYumBonus();
+        bool hetuwIsAutoClick();
 		char getTransHintable( TransRecord *inTrans ); // hetuw mod - changed from static and made visible to public
 		
         virtual void actionPerformed( GUIComponent *inTarget );
@@ -585,6 +599,7 @@ class LivingLifePage : public GamePage, public ActionListener {
     protected:
 
         int mServerSocket;
+        int mServerSocketOld;
         
         int mRequiredVersion;
 

@@ -1,9 +1,9 @@
-int versionNumber = 391;
+int versionNumber = 399;
 int dataVersionNumber = 0;
 
 int binVersionNumber = versionNumber;
 
-const char *yumSubVersion = "b";
+const char *yumSubVersion = "";
 
 // Note to modders:
 // Please use this tag to describe your client honestly and uniquely
@@ -297,7 +297,7 @@ const char *getLinuxAppName() {
 
 
 const char *getFontTGAFileName() {
-    return "font_32_64.tga";
+    return "font_32_64_yum.tga";
     }
 
 
@@ -2136,6 +2136,27 @@ void drawFrame( char inUpdate ) {
                 }
             else if( livingLifePage->checkSignal( "disconnect" ) ) {
                 showReconnectPage();
+                }
+            else if( livingLifePage->checkSignal( "reborn" ) ) {
+                // YumLife mod
+                if( userTwinCode != NULL ) {
+                    delete [] userTwinCode;
+                    userTwinCode = NULL;
+                    }
+                userTwinCode = stringDuplicate( "yumlife_reborn" );
+                userTwinCount = 1;
+                startConnecting();
+                }
+            else if( livingLifePage->checkSignal( "tutorial" ) ) {
+                // YumLife mod
+                if( userTwinCode != NULL ) {
+                    delete [] userTwinCode;
+                    userTwinCode = NULL;
+                    }
+                userTwinCode = stringDuplicate( "yumlife_tutorial" );
+                userTwinCount = 1;
+                livingLifePage->runTutorial( 1 );
+                startConnecting();
                 }
             else if( livingLifePage->checkSignal( "loadFailure" ) ) {
                 currentGamePage = finalMessagePage;
